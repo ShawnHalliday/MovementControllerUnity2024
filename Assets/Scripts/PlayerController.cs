@@ -23,13 +23,11 @@ public class PlayerController : MonoBehaviour
 
     private float forwardMove;
     private float rightMove;
-    private float playerFriction = 0.0f;
     private float rotX = 0.0f;
     private float rotY = 0.0f;
 
     public GUIStyle style;
 
-    private Vector3 moveDirectionNorm = Vector3.zero;
     private Vector3 playerVelocity = Vector3.zero;
 
     public Transform playerView;
@@ -70,6 +68,7 @@ public class PlayerController : MonoBehaviour
             GroundMove();
         else if (!_controller.isGrounded)
             AirMove();
+        
         _controller.Move(playerVelocity * Time.deltaTime);
         playerView.position = new Vector3(transform.position.x, transform.position.y + playerViewYOffset, transform.position.z);
     }
@@ -98,7 +97,6 @@ public class PlayerController : MonoBehaviour
     private void AirMove()
     {
         Vector3 wishdir;
-        float wishvel = airAcceleration;
         float accel;
         SetMovementDir();
         wishdir = new Vector3(rightMove, 0, forwardMove);
@@ -106,7 +104,6 @@ public class PlayerController : MonoBehaviour
         float wishspeed = wishdir.magnitude;
         wishspeed *= moveSpeed;
         wishdir.Normalize();
-        moveDirectionNorm = wishdir;
         float wishspeed2 = wishspeed;
         if (Vector3.Dot(playerVelocity, wishdir) < 0)
         {
@@ -116,17 +113,24 @@ public class PlayerController : MonoBehaviour
         {
             accel = airAcceleration;
         }
+        
         if (wishspeed > sideStrafeSpeed)
         {
             wishspeed = sideStrafeSpeed;
         }
         accel = sideStrafeAcceleration;
+        
         Accelerate(wishdir, wishspeed, accel);
+        if (wishspeed2 > moveSpeed)
+        {
+            wishspeed2 = moveSpeed;
+        }
         if (airControl > 0)
         {
             AirControl(wishdir, wishspeed2);
         }
         playerVelocity.y -= gravity * Time.deltaTime;
+        Debug.Log(wishspeed.ToString() + " " + wishspeed2.ToString());
     }
     private void AirControl(Vector3 wishdir, float wishspeed)
     {
@@ -134,6 +138,7 @@ public class PlayerController : MonoBehaviour
         float speed;
         float dot;
         float k;
+        
         if (Mathf.Abs(forwardMove) < 0.001 || Mathf.Abs(wishspeed) < 0.001)
         {
             return;
@@ -151,7 +156,6 @@ public class PlayerController : MonoBehaviour
             playerVelocity.y = playerVelocity.y * speed + wishdir.y * k;
             playerVelocity.z = playerVelocity.z * speed + wishdir.z * k;
             playerVelocity.Normalize();
-            moveDirectionNorm = playerVelocity;
         }
         playerVelocity.x *= speed;
         playerVelocity.y = zspeed;
@@ -166,13 +170,12 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            ApplyFriction(0);
+            ApplyFriction(1f);
         }
         SetMovementDir();
         wishdir = new Vector3(rightMove, 0, forwardMove);
         wishdir = transform.TransformDirection(wishdir);
         wishdir.Normalize();
-        moveDirectionNorm = wishdir;
         var wishspeed = wishdir.magnitude;
         wishspeed *= moveSpeed;
         Accelerate(wishdir, wishspeed, runAcceleration);
@@ -199,7 +202,6 @@ public class PlayerController : MonoBehaviour
             drop = control * friction * Time.deltaTime * t;
         }
         newspeed = speed - drop;
-        playerFriction = newspeed;
         if (newspeed < 0)
         {
             newspeed = 0;
@@ -216,7 +218,7 @@ public class PlayerController : MonoBehaviour
         float addspeed;
         float accelspeed;
         float currentspeed;
-        float magnitude;
+        
         currentspeed = Vector3.Dot(playerVelocity, wishdir);
         addspeed = wishspeed - currentspeed;
         if (addspeed <= 0)
@@ -230,12 +232,6 @@ public class PlayerController : MonoBehaviour
         }
         playerVelocity.x += accelspeed * wishdir.x;
         playerVelocity.z += accelspeed * wishdir.z;
-        magnitude = Mathf.Sqrt(playerVelocity.x * playerVelocity.x + playerVelocity.z * playerVelocity.z);
-        if (magnitude > speedClamp)
-        {
-            playerVelocity.x *= speedClamp / magnitude;
-            playerVelocity.x *= speedClamp / magnitude;
-        }
     }
     private void OnGUI()
     {
