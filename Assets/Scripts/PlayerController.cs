@@ -19,14 +19,17 @@ public class PlayerController : MonoBehaviour
     public float sideStrafeSpeed = 1.0f;
     public float jumpSpeed = 8.0f;
     public float speedClamp = 20.0f;
+    public float grappleForce = 1f;
     public bool holdJumpToBhop = false;
-
+    public LayerMask layerMask;
     private float forwardMove;
     private float rightMove;
     private float rotX = 0.0f;
     private float rotY = 0.0f;
-
+    private Vector3 grapplePos;
     public GUIStyle style;
+    private bool isGrappled = false;
+
 
     private Vector3 playerVelocity = Vector3.zero;
 
@@ -64,6 +67,7 @@ public class PlayerController : MonoBehaviour
         transform.rotation = Quaternion.Euler(0, rotY, 0);
         playerView.rotation = Quaternion.Euler(rotX, rotY, 0);
         QueueJump();
+        Grapple();
         if (_controller.isGrounded)
             GroundMove();
         else if (!_controller.isGrounded)
@@ -130,7 +134,6 @@ public class PlayerController : MonoBehaviour
             AirControl(wishdir, wishspeed2);
         }
         playerVelocity.y -= gravity * Time.deltaTime;
-        Debug.Log(wishspeed.ToString() + " " + wishspeed2.ToString());
     }
     private void AirControl(Vector3 wishdir, float wishspeed)
     {
@@ -233,10 +236,35 @@ public class PlayerController : MonoBehaviour
         playerVelocity.x += accelspeed * wishdir.x;
         playerVelocity.z += accelspeed * wishdir.z;
     }
+    private void Grapple()
+    {
+        RaycastHit hit;
+        Vector3 x;
+        if (Input.GetMouseButtonDown(1))
+        {
+            if (Physics.Raycast(playerView.position, Camera.main.transform.forward, out hit, 200f, layerMask))
+            {
+                grapplePos = hit.point;
+                isGrappled = true;
+            }
+        }
+        else if (Input.GetMouseButtonUp(1))
+        {
+            isGrappled = false;
+        }
+        if (isGrappled)
+        {
+            x = grapplePos - transform.position;
+            playerVelocity += x * grappleForce * Time.deltaTime;
+        }
+        Debug.Log(isGrappled);
+        Debug.DrawLine(playerView.position, playerView.position + Camera.main.transform.forward);
+    }
     private void OnGUI()
     {
         var ups = _controller.velocity;
         ups.y = 0;
         GUI.Label(new Rect(0, 15, 400, 100), "Speed: " + Mathf.Round(ups.magnitude * 100) / 100 + "ups", style);
+        GUI.Label(new Rect(0, 30, 400, 100), "Grapple Pos: " + grapplePos.ToString(), style);
     }
 }
