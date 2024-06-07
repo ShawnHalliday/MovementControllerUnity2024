@@ -26,9 +26,9 @@ public class PlayerController : MonoBehaviour
     private float rightMove;
     private float rotX = 0.0f;
     private float rotY = 0.0f;
-    private Vector3 grapplePos;
+    public Vector3 grapplePos;
     public GUIStyle style;
-    private bool isGrappled = false;
+    public bool isGrappled = false;
 
 
     private Vector3 playerVelocity = Vector3.zero;
@@ -260,6 +260,22 @@ public class PlayerController : MonoBehaviour
         Debug.Log(isGrappled);
         Debug.DrawLine(playerView.position, playerView.position + Camera.main.transform.forward);
     }
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+
+        if (hit.gameObject.layer == 3)
+        {
+            return;
+        }
+        else
+        {
+
+            Vector3 normal = hit.normal;
+            playerVelocity = Vector3.ProjectOnPlane(new Vector3(playerVelocity.x, 0, playerVelocity.z), normal);
+            
+        }
+    }
+        
     private void OnGUI()
     {
         var ups = _controller.velocity;
