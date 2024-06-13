@@ -257,22 +257,26 @@ public class PlayerController : MonoBehaviour
             x = grapplePos - transform.position;
             playerVelocity += x * grappleForce * Time.deltaTime;
         }
-        Debug.Log(isGrappled);
         Debug.DrawLine(playerView.position, playerView.position + Camera.main.transform.forward);
     }
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
-
+        Vector3 normal = hit.normal;
         if (hit.gameObject.layer == 3)
         {
             return;
         }
+        else if(!(Vector3.Dot(normal, Vector3.up) > 0.1f))
+        {
+            playerVelocity = Vector3.ProjectOnPlane(new Vector3(playerVelocity.x, 0, playerVelocity.z), normal);
+        }
         else
         {
-
-            Vector3 normal = hit.normal;
-            playerVelocity = Vector3.ProjectOnPlane(new Vector3(playerVelocity.x, 0, playerVelocity.z), normal);
-            
+            if (!_controller.isGrounded)
+            {
+                playerVelocity = Vector3.ProjectOnPlane(playerVelocity, normal);
+            }
+            Debug.DrawLine(transform.position, transform.position + Vector3.ProjectOnPlane(playerVelocity, normal).normalized*3f);
         }
     }
         
