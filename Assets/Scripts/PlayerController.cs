@@ -29,6 +29,7 @@ public class PlayerController : MonoBehaviour
     public Vector3 grapplePos;
     public GUIStyle style;
     public bool isGrappled = false;
+    private Vector3 CollisionNormal = Vector3.zero;
 
 
     private Vector3 playerVelocity = Vector3.zero;
@@ -38,7 +39,15 @@ public class PlayerController : MonoBehaviour
     private bool wishJump = false;
 
     private CharacterController _controller;
-
+    public enum CollisionType
+    {
+        Floor,
+        Roof,
+        Wall,
+        Ramp,
+        NULL
+    }
+    private CollisionType collisionType;
     void Start()
     {
         Cursor.visible = false;
@@ -72,7 +81,7 @@ public class PlayerController : MonoBehaviour
             GroundMove();
         else if (!_controller.isGrounded)
             AirMove();
-        
+        HandleCollisionTypes();
         _controller.Move(playerVelocity * Time.deltaTime);
         playerView.position = new Vector3(transform.position.x, transform.position.y + playerViewYOffset, transform.position.z);
     }
@@ -261,24 +270,66 @@ public class PlayerController : MonoBehaviour
     }
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
-        Vector3 normal = hit.normal;
-        if (hit.gameObject.layer == 3)
+        CollisionNormal = hit.normal;
+        float dot = Vector3.Dot(CollisionNormal, Vector3.up);
+        if (hit.gameObject.layer == 3 || dot == 1)
         {
+            collisionType = CollisionType.Floor;
+            Debug.Log("Floor");
             return;
         }
-        else if(!(Vector3.Dot(normal, Vector3.up) > 0.1f))
+        else if (dot < -0.01f)
         {
-            playerVelocity = Vector3.ProjectOnPlane(new Vector3(playerVelocity.x, 0, playerVelocity.z), normal);
+            collisionType = CollisionType.Roof;
+            //playerVelocity.y = -1f;
+            Debug.Log("Roof");
+            return;
+        }
+        else if (dot < 0.01f)
+        {
+            collisionType = CollisionType.Wall;
+            //playerVelocity = Vector3.ProjectOnPlane(playerVelocity, CollisionNormal);
+            Debug.Log("Wall");
+            return;
+        }
+        else if (dot >= 0.01f && dot < 1f)
+        {
+            collisionType = CollisionType.Ramp;
+            //if (!_controller.isGrounded)
+            //{
+            //    playerVelocity = Vector3.ProjectOnPlane(playerVelocity, CollisionNormal);
+            //}
+
+            Debug.DrawLine(transform.position, transform.position + Vector3.ProjectOnPlane(playerVelocity, CollisionNormal).normalized * 3f);
+            Debug.Log("Ramp");
+            return;
         }
         else
         {
-            if (!_controller.isGrounded)
-            {
-                playerVelocity = Vector3.ProjectOnPlane(playerVelocity, normal);
-            }
-            Debug.DrawLine(transform.position, transform.position + Vector3.ProjectOnPlane(playerVelocity, normal).normalized*3f);
+            collisionType = CollisionType.NULL;
+            return;
         }
     }
+    private void HandleCollisionTypes()
+    {
+        float dot = Vector3.Dot(CollisionNormal, Vector3.up);
+        if (collisionType == CollisionType.Roof)
+        {
+            playerVelocity.y = -1f;
+        }
+        else if (collisionType == CollisionType.Wall)
+        {
+            playerVelocity = Vector3.ProjectOnPlane(playerVelocity, CollisionNormal);
+        }
+        else if (collisionType == CollisionType.Ramp)
+        {
+            if (!_controller.isGrounded)
+            {
+                playerVelocity = Vector3.ProjectOnPlane(playerVelocity, CollisionNormal);
+            }
+        }
+    }
+
         
     private void OnGUI()
     {
