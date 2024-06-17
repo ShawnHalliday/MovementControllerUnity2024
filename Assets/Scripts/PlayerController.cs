@@ -30,8 +30,9 @@ public class PlayerController : MonoBehaviour
     public GUIStyle style;
     public bool isGrappled = false;
     private Vector3 CollisionNormal = Vector3.zero;
-
-
+    float i= 0;
+    float lastI = 0;
+    bool colliding = false;
     private Vector3 playerVelocity = Vector3.zero;
 
     public Transform playerView;
@@ -81,7 +82,10 @@ public class PlayerController : MonoBehaviour
             GroundMove();
         else if (!_controller.isGrounded)
             AirMove();
-        HandleCollisionTypes();
+        if (colliding)
+        {
+            HandleCollisionTypes();
+        }
         _controller.Move(playerVelocity * Time.deltaTime);
         playerView.position = new Vector3(transform.position.x, transform.position.y + playerViewYOffset, transform.position.z);
     }
@@ -266,30 +270,32 @@ public class PlayerController : MonoBehaviour
             x = grapplePos - transform.position;
             playerVelocity += x * grappleForce * Time.deltaTime;
         }
-        Debug.DrawLine(playerView.position, playerView.position + Camera.main.transform.forward);
+        //Debug.DrawLine(playerView.position, playerView.position + Camera.main.transform.forward);
     }
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
+        i = Time.deltaTime;
+        colliding = true;
         CollisionNormal = hit.normal;
         float dot = Vector3.Dot(CollisionNormal, Vector3.up);
         if (hit.gameObject.layer == 3 || dot == 1)
         {
             collisionType = CollisionType.Floor;
-            Debug.Log("Floor");
+            //Debug.Log("Floor");
             return;
         }
         else if (dot < -0.01f)
         {
             collisionType = CollisionType.Roof;
             //playerVelocity.y = -1f;
-            Debug.Log("Roof");
+            //Debug.Log("Roof");
             return;
         }
         else if (dot < 0.01f)
         {
             collisionType = CollisionType.Wall;
             //playerVelocity = Vector3.ProjectOnPlane(playerVelocity, CollisionNormal);
-            Debug.Log("Wall");
+            //Debug.Log("Wall");
             return;
         }
         else if (dot >= 0.01f && dot < 1f)
@@ -300,8 +306,8 @@ public class PlayerController : MonoBehaviour
             //    playerVelocity = Vector3.ProjectOnPlane(playerVelocity, CollisionNormal);
             //}
 
-            Debug.DrawLine(transform.position, transform.position + Vector3.ProjectOnPlane(playerVelocity, CollisionNormal).normalized * 3f);
-            Debug.Log("Ramp");
+            //Debug.DrawLine(transform.position, transform.position + Vector3.ProjectOnPlane(playerVelocity, CollisionNormal).normalized * 3f);
+            //Debug.Log("Ramp");
             return;
         }
         else
@@ -327,10 +333,22 @@ public class PlayerController : MonoBehaviour
             {
                 playerVelocity = Vector3.ProjectOnPlane(playerVelocity, CollisionNormal);
             }
+            else if (dot < 0f)
+            {
+                //Debug.Log("Going Down");
+                //playerVelocity.y = -4f;
+            }
         }
+        if (i != lastI)
+        {
+            colliding = false;
+        }
+        
+        lastI = Time.deltaTime;
+        Debug.Log(colliding);
     }
 
-        
+
     private void OnGUI()
     {
         var ups = _controller.velocity;
