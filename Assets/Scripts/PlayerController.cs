@@ -23,10 +23,12 @@ public class PlayerController : MonoBehaviour
     public bool holdJumpToBhop = false;
     public LayerMask layerMask;
     private float forwardMove;
+    public Vector3 crouchModifier = new Vector3(1f, 0.5f, 1f);
     private float rightMove;
     private float rotX = 0.0f;
     private float rotY = 0.0f;
     public Vector3 grapplePos;
+    private Vector3 crouchScale = Vector3.one;
     public GUIStyle style;
     public bool isGrappled = false;
     private Vector3 CollisionNormal = Vector3.zero;
@@ -59,7 +61,7 @@ public class PlayerController : MonoBehaviour
                 playerView = mainCamera.gameObject.transform;
             }
         }
-        playerView.position = new Vector3(transform.position.x, transform.position.y + playerViewYOffset, transform.position.z);
+        playerView.position = new Vector3(transform.position.x, transform.position.y + playerViewYOffset*crouchScale.y, transform.position.z);
     }
     void Update()
     {
@@ -76,13 +78,14 @@ public class PlayerController : MonoBehaviour
         isColliding = false;
         QueueJump();
         Grapple();
+        crouch();
         if (_controller.isGrounded)
             GroundMove();
         else if (!_controller.isGrounded)
             AirMove();
         HandleCollisionTypes();
         _controller.Move(playerVelocity * Time.deltaTime);
-        playerView.position = new Vector3(transform.position.x, transform.position.y + playerViewYOffset, transform.position.z);
+        playerView.position = new Vector3(transform.position.x, transform.position.y + playerViewYOffset * crouchScale.y, transform.position.z);
         Debug.Log(isColliding);
         if (!isColliding)
         {
@@ -315,7 +318,8 @@ public class PlayerController : MonoBehaviour
         float dot = Vector3.Dot(CollisionNormal, Vector3.up);
         if (collisionType == CollisionType.Roof)
         {
-            playerVelocity.y = -1f;
+            playerVelocity = Vector3.ProjectOnPlane(playerVelocity, CollisionNormal);
+            playerVelocity.y -= 1f;
         }
         else if (collisionType == CollisionType.Wall)
         {
@@ -329,7 +333,20 @@ public class PlayerController : MonoBehaviour
             }
         }
     }
-
+    private void crouch()
+    {
+        if (Input.GetKeyDown(KeyCode.LeftControl))
+        {
+            crouchScale = crouchModifier;
+            moveSpeed = 4.5f;
+        }
+        else if (Input.GetKeyUp(KeyCode.LeftControl))
+        {
+            crouchScale = Vector3.one;
+            moveSpeed = 7f;
+        }
+        transform.localScale = crouchScale;
+    }
 
     private void OnGUI()
     {
