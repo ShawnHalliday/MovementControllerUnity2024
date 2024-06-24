@@ -4,37 +4,35 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    public float playerViewYOffset = 0.5f;
-    public float xMouseSensitivity = 30.0f;
-    public float yMouseSensitivity = 30.0f;
-    public float gravity = 20.0f;
-    public float friction = 6;
-    public float moveSpeed = 7.0f;
-    public float runAcceleration = 14.0f;
-    public float runDeacceleration = 10.0f;
-    public float airAcceleration = 2.0f;
-    public float airDecceleration = 2.0f;
-    public float airControl = 0.3f;
-    public float sideStrafeAcceleration = 50.0f;
-    public float sideStrafeSpeed = 1.0f;
-    public float jumpSpeed = 8.0f;
-    public float speedClamp = 20.0f;
-    public float grappleForce = 1f;
-    public bool holdJumpToBhop = false;
+    private readonly float playerViewYOffset = 0.5f;
+    public Transform playerView;
+    public float xMouseSensitivity = 50.0f;
+    public float yMouseSensitivity = 50.0f;
+    private readonly float gravity = 20.0f;
+    private readonly float friction = 6.0f;
+    private float moveSpeed = 7.0f;
+    private readonly float runAcceleration = 14.0f;
+    private readonly float runDeacceleration = 10.0f;
+    private readonly float airAcceleration = 2.0f;
+    private readonly float airDecceleration = 2.0f;
+    private readonly float airControl = 0.3f;
+    private readonly float sideStrafeAcceleration = 100.0f;
+    private readonly float sideStrafeSpeed = 1.0f;
+    private readonly float jumpSpeed = 8.0f;
+    private readonly float grappleForce = 2.0f;
     public LayerMask layerMask;
     private float forwardMove;
-    public Vector3 crouchModifier = new Vector3(1f, 0.5f, 1f);
+    private readonly Vector3 crouchModifier = new Vector3(1f, 0.5f, 1f);
     private float rightMove;
     private float rotX = 0.0f;
     private float rotY = 0.0f;
+    public bool isGrappled = false;
     public Vector3 grapplePos;
     private Vector3 crouchScale = Vector3.one;
     public GUIStyle style;
-    public bool isGrappled = false;
     private Vector3 CollisionNormal = Vector3.zero;
     private Vector3 playerVelocity = Vector3.zero;
     private bool isColliding = false;
-    public Transform playerView;
 
     private bool wishJump = false;
 
@@ -85,7 +83,7 @@ public class PlayerController : MonoBehaviour
             AirMove();
         HandleCollisionTypes();
         _controller.Move(playerVelocity * Time.deltaTime);
-        playerView.position = new Vector3(transform.position.x, transform.position.y + playerViewYOffset * crouchScale.y, transform.position.z);
+        playerView.position = new Vector3(transform.position.x, transform.position.y + playerViewYOffset + (crouchScale.y-1), transform.position.z);
         Debug.Log(isColliding);
         if (!isColliding)
         {
@@ -100,20 +98,7 @@ public class PlayerController : MonoBehaviour
     }
     private void QueueJump()
     {
-        if (holdJumpToBhop)
-        {
-            wishJump = Input.GetButton("Jump");
-            return;
-        }
-
-        if (Input.GetButtonDown("Jump") && !wishJump)
-        {
-            wishJump = true;
-        }
-        if (Input.GetButtonUp("Jump"))
-        {
-            wishJump = false;
-        }
+        wishJump = Input.GetButton("Jump");
     }
     private void AirMove()
     {
